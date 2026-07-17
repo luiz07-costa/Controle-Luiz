@@ -1,8 +1,4 @@
 
-Adicionar a exportação para CSV é uma excelente sacada para manter o controle total dos dados e facilitar a importação direta no Excel ou no Google Sheets.
-Para fazer isso da forma mais limpa e integrada, adicionei o botão **"Exportar para Excel/Sheets (CSV)"** na aba **Configurações & Orçamentos (Config.)**, logo acima do botão de apagar os dados. O script lida automaticamente com a conversão de caracteres especiais e usa o ponto e vírgula (;) como separador, que é o padrão reconhecido automaticamente pelo Excel em português.
-Aqui está o código completo do seu aplicativo atualizado para a versão **3.1**:
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -93,7 +89,7 @@ h1{color:#d4af37;font-size:30px;}
 .vermelho{background:#F44336;}
 .fab{position:fixed;right:20px;bottom:105px;width:70px;height:70px;border-radius:50%;background:#d4af37;border:none;font-size:30px;cursor:pointer;box-shadow:0 0 20px rgba(212,175,55,.4);z-index:50;}
 
-/* Ajuste do Menu para acomodar 7 botões no rodapé */
+/* Menu Inferior */
 nav{position:fixed;bottom:0;left:0;right:0;height:85px;background:#111;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #2d2d2d;z-index:60;padding-bottom:5px;}
 nav div{display:flex;flex-direction:column;align-items:center;cursor:pointer;font-size:9px;color:#888;transition:color .2s;flex:1;text-align:center;}
 nav div.ativo{color:#d4af37;}
@@ -368,7 +364,7 @@ input:focus,select:focus{outline:2px solid #d4af37;}
   </div>
 </div>
 
-<!-- Menu Inferior (Atualizado com Patrimônio) -->
+<!-- Menu Inferior -->
 <nav>
   <div id="nav-dashboard" class="ativo" onclick="mostrarTela('dashboard')"><i class="fa-solid fa-house"></i><span>Início</span></div>
   <div id="nav-receitas" onclick="mostrarTela('receitas')"><i class="fa-solid fa-money-bill-wave"></i><span>Lançamentos</span></div>
@@ -381,14 +377,13 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 
 <footer>
   Controle Luiz<br>
-  Versão 3.1<br><br>
+  Versão 3.2<br><br>
   Desenvolvido por <b>Luiz Costa</b>
 </footer>
 
 <script>
 /* =========================================================
-   CONTROLE LUIZ — lógica completa (v3.1)
-   Dados salvos localmente e exportação habilitada
+   CONTROLE LUIZ — lógica completa (v3.2)
    ========================================================= */
 
 const CHAVE_DADOS = "controleLuiz_dados_v3";
@@ -405,7 +400,7 @@ const CATEGORIAS_PADRAO = {
   "Vale":                 { icone: "fa-ticket",       tipo: "receita" },
   "13º Salário":          { icone: "fa-gift",          tipo: "receita" },
   "Venda":                { icone: "fa-tag",          tipo: "receita" },
-  "Investimentos":        { icone: "fa-chart-line",   tipo: "receita" }, // Tudo adicionado aqui soma em patrimônio
+  "Investimentos":        { icone: "fa-chart-line",   tipo: "receita" },
   "Proventos de Ações":   { icone: "fa-coins",        tipo: "receita" },
   "Proventos FIIs":       { icone: "fa-building",     tipo: "receita" },
   "Nota Fiscal Paulista": { icone: "fa-receipt",      tipo: "receita" },
@@ -416,7 +411,7 @@ const CATEGORIAS_PADRAO = {
 let dataFiltro = new Date();
 let dados = carregarDados();
 
-// Referência global para destruir os gráficos no recarregamento
+// Referência global para os gráficos
 let graficoAnualChart = null;
 let graficoCategoriasChart = null;
 let graficoMetodosChart = null;
@@ -445,9 +440,9 @@ function carregarDados(){
 
   return {
     categorias: categoriasIniciais,
-    transacoes: [], // ZERADO conforme solicitado
+    transacoes: [],
     orcamentosMensais: {},
-    ajustePatrimonialManual: 0 // Ajuste dinâmico manual de rendimento patrimonial
+    ajustePatrimonialManual: 0
   };
 }
 
@@ -507,7 +502,6 @@ function mostrarTela(nome){
 
   const seletor = document.getElementById("seletor-periodo-global");
   
-  // Ocultar seletor de data nas abas Dev e Patrimônio
   if (nome === "dev" || nome === "patrimonio") {
     seletor.classList.add("escondido");
   } else {
@@ -525,7 +519,6 @@ function mostrarTela(nome){
 // ---------- FORMULÁRIO LANÇAMENTO ----------
 function abrirFormulario(id = null){
   document.getElementById("erro-form").style.display = "none";
-  atualizarCategoriasForm();
 
   if (id) {
     const t = dados.transacoes.find(item => item.id === id);
@@ -667,22 +660,7 @@ function excluirCategoria(nome){
   }
 }
 
-// ---------- CÁLCULOS ----------
-function totalPorTipoNoPeriodo(tipo, transacoesFiltradas){
-  return transacoesFiltradas.filter(t=>t.tipo===tipo).reduce((soma,t)=>soma+t.valor,0);
-}
-
-function gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas){
-  return transacoesFiltradas
-    .filter(t=>t.categoria===nome && t.tipo==="despesa")
-    .reduce((soma,t)=>soma+t.valor,0);
-}
-
-function formatarMoeda(v){
-  return "R$ " + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-}
-
-// ---------- EXPORTAR PARA EXCEL (CSV) ----------
+// ---------- EXPORTAÇÃO PARA EXCEL/GOOGLESHEETS (CSV) ----------
 function exportarParaCSV() {
   if (dados.transacoes.length === 0) {
     alert("Nenhum lançamento cadastrado para ser exportado.");
@@ -716,6 +694,21 @@ function exportarParaCSV() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// ---------- CÁLCULOS ----------
+function totalPorTipoNoPeriodo(tipo, transacoesFiltradas){
+  return transacoesFiltradas.filter(t=>t.tipo===tipo).reduce((soma,t)=>soma+t.valor,0);
+}
+
+function gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas){
+  return transacoesFiltradas
+    .filter(t=>t.categoria===nome && t.tipo==="despesa")
+    .reduce((soma,t)=>soma+t.valor,0);
+}
+
+function formatarMoeda(v){
+  return "R$ " + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 // ---------- RENDER: DASHBOARD ----------
@@ -825,18 +818,15 @@ function excluirTransacao(id){
 
 // ---------- RENDER: PATRIMÔNIO (INVESTIMENTOS) ----------
 function renderizarPatrimonio(){
-  // 1. Calcula a soma histórica de todos os lançamentos de investimentos
   const totalInvestidoLancamentos = dados.transacoes
     .filter(t => t.tipo === "receita" && t.categoria === "Investimentos")
     .reduce((soma, t) => soma + t.valor, 0);
 
-  // 2. Patrimônio final = lançamentos de investimentos + os ajustes manuais de rendimentos
   const patrimonioTotalCalculado = totalInvestidoLancamentos + dados.ajustePatrimonialManual;
 
   document.getElementById("patrimonio-total").textContent = formatarMoeda(patrimonioTotalCalculado);
   document.getElementById("input-ajuste-patrimonio").value = dados.ajustePatrimonialManual;
 
-  // Renderizar o histórico individual de investimentos
   const listaInv = document.getElementById("lista-investimentos-historico");
   listaInv.innerHTML = "";
 
@@ -883,15 +873,12 @@ function renderizarGraficos(){
   const anoFiltro = dataFiltro.getFullYear();
   const mesesAbreviados = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   
-  // Estruturas de agregação mensal (Evolução Anual)
   const receitasMensais = Array(12).fill(0);
   const despesasMensais = Array(12).fill(0);
   const patrimonioAcumulado = Array(12).fill(0);
 
-  // Variável de controle para soma de investimentos acumulado
   let totalInvestidoHistorico = 0;
 
-  // Filtra lançamentos e agrupa por mês para os dados anuais
   dados.transacoes.forEach(t => {
     const dataT = new Date(t.data + 'T00:00:00');
     if(dataT.getFullYear() === anoFiltro) {
@@ -902,10 +889,8 @@ function renderizarGraficos(){
         despesasMensais[mesIdx] += t.valor;
       }
     }
-    // Para cálculo de patrimônio cumulativo
     if(t.categoria === "Investimentos") {
       const mesIdx = dataT.getMonth();
-      // Soma ao histórico geral
       totalInvestidoHistorico += t.valor;
       if(dataT.getFullYear() === anoFiltro) {
         patrimonioAcumulado[mesIdx] = totalInvestidoHistorico;
@@ -913,7 +898,6 @@ function renderizarGraficos(){
     }
   });
 
-  // Corrige os meses vazios do patrimônio acumulado para manter o último saldo
   let ultimoSaldoPatrimonio = 0;
   for(let i=0; i<12; i++){
     if(patrimonioAcumulado[i] === 0) {
@@ -923,10 +907,8 @@ function renderizarGraficos(){
     }
   }
 
-  // Dados do mês ATUAL filtrado
   const transacoesDoMes = filtrarTransacoesDoPeriodo();
   
-  // Distribuição por Categoria (Mês Atual)
   const nomesDespesa = Object.keys(dados.categorias).filter(n=>dados.categorias[n].tipo==="despesa");
   const categoriasAtivas = [];
   const valoresAtivos = [];
@@ -938,7 +920,6 @@ function renderizarGraficos(){
     }
   });
 
-  // Métodos de Pagamento Utilizados (Mês Atual)
   const metodosDisponiveis = ["PIX", "Débito", "Crédito", "Dinheiro", "Boleto", "Débito Automático"];
   const somaPorMetodo = Array(metodosDisponiveis.length).fill(0);
   transacoesDoMes.filter(t => t.tipo === "despesa").forEach(t => {
@@ -947,7 +928,7 @@ function renderizarGraficos(){
     if(idx !== -1) somaPorMetodo[idx] += t.valor;
   });
 
-  // --- GRÁFICO 1: EVOLUÇÃO ANUAL (Receitas x Despesas) ---
+  // --- GRÁFICO 1 ---
   const ctxAnual = document.getElementById("graficoAnualComparativo").getContext("2d");
   if(graficoAnualChart) graficoAnualChart.destroy();
   graficoAnualChart = new Chart(ctxAnual, {
@@ -966,7 +947,7 @@ function renderizarGraficos(){
     }
   });
 
-  // --- GRÁFICO 2: DESPESAS POR CATEGORIA ---
+  // --- GRÁFICO 2 ---
   const ctxCategorias = document.getElementById("graficoCategorias").getContext("2d");
   if(graficoCategoriasChart) graficoCategoriasChart.destroy();
   if(valoresAtivos.length === 0) {
@@ -983,7 +964,7 @@ function renderizarGraficos(){
     });
   }
 
-  // --- GRÁFICO 3: MÉTODOS DE PAGAMENTO MAIS UTILIZADOS ---
+  // --- GRÁFICO 3 ---
   const ctxMetodos = document.getElementById("graficoMetodosPagamento").getContext("2d");
   if(graficoMetodosChart) graficoMetodosChart.destroy();
   graficoMetodosChart = new Chart(ctxMetodos, {
@@ -993,14 +974,14 @@ function renderizarGraficos(){
       datasets: [{ label: "Total Gasto", data: somaPorMetodo, backgroundColor: "#03A9F4" }]
     },
     options: {
-      indexAxis: 'y', // Barra Horizontal
+      indexAxis: 'y',
       responsive: true,
       plugins: { legend: { display: false }, title: { display: true, text: "Gastos por Canal de Pagamento (Mês)", color: "#d4af37" } },
       scales: { x: { ticks: { color: "#ccc" } }, y: { ticks: { color: "#ccc" } } }
     }
   });
 
-  // --- GRÁFICO 4: CRESCIMENTO HISTÓRICO DE PATRIMÔNIO ---
+  // --- GRÁFICO 4 ---
   const ctxPatrimonio = document.getElementById("graficoPatrimonioHistorico").getContext("2d");
   if(graficoPatrimonioChart) graficoPatrimonioChart.destroy();
   graficoPatrimonioChart = new Chart(ctxPatrimonio, {
@@ -1076,7 +1057,7 @@ function renderizarInsights(){
   });
 }
 
-// ---------- RENDER: CONFIG (orçamentos e categorias) ----------
+// ---------- RENDER: CONFIG ----------
 function renderizarConfig(){
   const lista = document.getElementById("lista-orcamentos");
   const chavePeriodo = obterChavePeriodo(dataFiltro);
@@ -1189,6 +1170,3 @@ atualizarTudo();
 </script>
 </body>
 </html>
-
-```
-
