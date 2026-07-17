@@ -98,7 +98,6 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 .config-item{background:#171717;border-radius:18px;padding:16px 18px;margin-bottom:14px;}
 .config-item .cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:600;}
 .config-item input{margin:0;}
-.link-orcamento{color:#d4af37;font-size:13px;cursor:pointer;text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -161,7 +160,7 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 
 <!-- ===================== TELA CONFIG ===================== -->
 <div id="tela-config" class="tela">
-  <h2 class="titulo">Orçamentos por Categoria</h2>
+  <h2 class="titulo">Configurações & Orçamentos</h2>
   <div class="lista" id="lista-orcamentos"></div>
   <div class="lista">
     <button class="btn-perigo" onclick="confirmarReset()">
@@ -209,6 +208,52 @@ input:focus,select:focus{outline:2px solid #d4af37;}
   </div>
 </div>
 
+<!-- Formulário Nova Categoria -->
+<div id="modal-categoria" class="modal-bg">
+  <div class="modal-box">
+    <h2 style="text-align:center;color:#d4af37;margin-bottom:25px;">Nova Categoria</h2>
+
+    <label>Nome da Categoria</label>
+    <input type="text" id="cat-nome" placeholder="Ex: Viagens, Assinaturas, Freelas...">
+
+    <label>Tipo</label>
+    <select id="cat-tipo" onchange="toggleOrcamentoCat()">
+      <option value="despesa">Despesa</option>
+      <option value="receita">Receita</option>
+    </select>
+
+    <div id="div-cat-orcamento">
+      <label>Orçamento Limite (R$)</label>
+      <input type="number" id="cat-orcamento" placeholder="Ex: 500" min="0" step="0.01">
+    </div>
+
+    <label>Ícone</label>
+    <select id="cat-icone">
+      <option value="fa-cart-shopping">🛒 Compras / Loja</option>
+      <option value="fa-utensils">🍔 Alimentação / Restaurante</option>
+      <option value="fa-car">🚗 Carro / Transporte</option>
+      <option value="fa-house">🏠 Casa / Aluguel</option>
+      <option value="fa-file-invoice">📄 Contas / Boletos</option>
+      <option value="fa-heart-pulse">🏥 Saúde / Farmácia</option>
+      <option value="fa-graduation-cap">🎓 Educação / Cursos</option>
+      <option value="fa-plane">✈️ Viagem / Férias</option>
+      <option value="fa-gamepad">🎮 Lazer / Games</option>
+      <option value="fa-paw">🐾 Pets</option>
+      <option value="fa-shirt">👕 Roupas / Beleza</option>
+      <option value="fa-mobile-screen">📱 Telefone / Internet</option>
+      <option value="fa-sack-dollar">💰 Dinheiro / Salário</option>
+      <option value="fa-chart-line">📈 Investimentos</option>
+      <option value="fa-gift">🎁 Presentes / Extras</option>
+      <option value="fa-tag">🏷️ Outros / Geral</option>
+    </select>
+
+    <div id="erro-cat" style="color:#F44336;font-size:13px;margin-bottom:10px;display:none;"></div>
+
+    <button class="btn-primario" onclick="salvarNovaCategoria()">Salvar Categoria</button>
+    <button class="btn-secundario" onclick="fecharModalCategoria()">Cancelar</button>
+  </div>
+</div>
+
 <!-- Modal de confirmação de reset -->
 <div id="modal-reset" class="modal-bg">
   <div class="modal-box">
@@ -230,13 +275,13 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 
 <footer>
   Controle Luiz<br>
-  Versão 2.1<br><br>
+  Versão 2.2<br><br>
   Desenvolvido por <b>Luiz Costa</b>
 </footer>
 
 <script>
 /* =========================================================
-   CONTROLE LUIZ — lógica completa (v2.1)
+   CONTROLE LUIZ — lógica completa (v2.2)
    Dados salvos no localStorage do navegador (uso offline)
    ========================================================= */
 
@@ -251,7 +296,7 @@ const CATEGORIAS_PADRAO = {
   "Academia":        { icone: "fa-dumbbell",       tipo: "despesa", orcamento: 150 },
   "Remédios":        { icone: "fa-pills",          tipo: "despesa", orcamento: 200 },
   "Lazer":           { icone: "fa-film",           tipo: "despesa", orcamento: 300 },
-  "Gastos com Carro":{ icone: "fa-car-side",       tipo: "despesa", orcamento: 400 },
+  "Gastos com Carro":{ icone: "fa-car",            tipo: "despesa", orcamento: 400 },
   "Salário":              { icone: "fa-sack-dollar",  tipo: "receita" },
   "Vale":                 { icone: "fa-ticket",       tipo: "receita" },
   "13º Salário":          { icone: "fa-gift",          tipo: "receita" },
@@ -259,11 +304,10 @@ const CATEGORIAS_PADRAO = {
   "Proventos de Ações":   { icone: "fa-chart-line",   tipo: "receita" },
   "Proventos FIIs":       { icone: "fa-building",     tipo: "receita" },
   "Nota Fiscal Paulista": { icone: "fa-receipt",      tipo: "receita" },
-  "Restituição IR":       { icone: "fa-file-invoice-dollar", tipo: "receita" },
+  "Restituição IR":       { icone: "fa-file-invoice", tipo: "receita" },
   "Outras Receitas":      { icone: "fa-coins",        tipo: "receita" }
 };
 
-// Gerador de datas dinâmico baseado no ano/mês local atual
 const dataAtualObj = new Date();
 const anoCorrente = dataAtualObj.getFullYear();
 const mesCorrente = String(dataAtualObj.getMonth() + 1).padStart(2, '0');
@@ -283,8 +327,7 @@ const TRANSACOES_EXEMPLO = [
 
 function hojeISO(){ return new Date().toISOString().slice(0,10); }
 
-// Instanciando o Estado Temporal do App
-let dataFiltro = new Date(); // Inicia com o mês atual
+let dataFiltro = new Date();
 let dados = carregarDados();
 let graficoCategoriasChart = null;
 let graficoComparativoChart = null;
@@ -306,7 +349,6 @@ function carregarDados(){
     categoriasIniciais[nome] = { ...CATEGORIAS_PADRAO[nome] };
   });
 
-  // Correção de concorrência com IDs incrementais explícitos no mock
   return {
     categorias: categoriasIniciais,
     transacoes: TRANSACOES_EXEMPLO.map((t, i) => ({ id: Date.now() + i, ...t }))
@@ -335,13 +377,12 @@ function alterarMes(direcao) {
   atualizarTudo();
 }
 
-// Retorna apenas transações que pertencem ao mês/ano selecionado no filtro
 function filtrarTransacoesDoPeriodo() {
   const anoFiltro = dataFiltro.getFullYear();
-  const mesFiltro = dataFiltro.getMonth(); // 0 a 11
+  const mesFiltro = dataFiltro.getMonth();
   
   return dados.transacoes.filter(t => {
-    const dataTransacao = new Date(t.data + 'T00:00:00'); // Trata timezone local
+    const dataTransacao = new Date(t.data + 'T00:00:00');
     return dataTransacao.getFullYear() === anoFiltro && dataTransacao.getMonth() === mesFiltro;
   });
 }
@@ -360,13 +401,12 @@ function mostrarTela(nome){
   if(nome==="config") renderizarConfig();
 }
 
-// ---------- FORMULÁRIO ----------
+// ---------- FORMULÁRIO LANÇAMENTO ----------
 function abrirFormulario(id = null){
   document.getElementById("erro-form").style.display = "none";
   atualizarCategoriasForm();
 
   if (id) {
-    // Modo Edição
     const t = dados.transacoes.find(item => item.id === id);
     if (!t) return;
     document.getElementById("titulo-form").textContent = "Editar Lançamento";
@@ -378,7 +418,6 @@ function abrirFormulario(id = null){
     document.getElementById("input-forma").value = t.forma;
     document.getElementById("input-data").value = t.data;
   } else {
-    // Modo Novo Lançamento
     document.getElementById("titulo-form").textContent = "Novo Lançamento";
     document.getElementById("input-id").value = "";
     document.getElementById("input-data").value = hojeISO();
@@ -424,25 +463,75 @@ function salvarLancamento(){
   }
 
   if (id) {
-    // Editando item existente
     const idx = dados.transacoes.findIndex(t => t.id === parseInt(id));
     if (idx !== -1) {
       dados.transacoes[idx] = { id: parseInt(id), tipo, categoria, valor, forma, data };
     }
   } else {
-    // Inserindo novo item
     dados.transacoes.push({ id: Date.now(), tipo, categoria, valor, forma, data });
   }
 
   salvarDados();
   fecharFormulario();
   
-  // Sincroniza a visualização do calendário com a data do lançamento que foi salvo
   const dataLancamento = new Date(data + 'T00:00:00');
   dataFiltro = dataLancamento;
   atualizarLabelPeriodo();
 
   atualizarTudo();
+}
+
+// ---------- FORMULÁRIO NOVA CATEGORIA ----------
+function abrirModalCategoria(){
+  document.getElementById("cat-nome").value = "";
+  document.getElementById("cat-tipo").value = "despesa";
+  document.getElementById("cat-orcamento").value = "";
+  document.getElementById("erro-cat").style.display = "none";
+  toggleOrcamentoCat();
+  document.getElementById("modal-categoria").style.display = "block";
+}
+
+function fecharModalCategoria(){
+  document.getElementById("modal-categoria").style.display = "none";
+}
+
+function toggleOrcamentoCat(){
+  const tipo = document.getElementById("cat-tipo").value;
+  document.getElementById("div-cat-orcamento").style.display = tipo === "despesa" ? "block" : "none";
+}
+
+function salvarNovaCategoria(){
+  const nome = document.getElementById("cat-nome").value.trim();
+  const tipo = document.getElementById("cat-tipo").value;
+  const orcamento = parseFloat(document.getElementById("cat-orcamento").value) || 0;
+  const icone = document.getElementById("cat-icone").value;
+  const erroEl = document.getElementById("erro-cat");
+
+  if(!nome){
+    erroEl.textContent = "Digite um nome para a categoria.";
+    erroEl.style.display = "block";
+    return;
+  }
+  if(dados.categorias[nome]){
+    erroEl.textContent = "Já existe uma categoria com esse nome.";
+    erroEl.style.display = "block";
+    return;
+  }
+
+  dados.categorias[nome] = { icone, tipo, orcamento: tipo === "despesa" ? orcamento : 0 };
+  salvarDados();
+  fecharModalCategoria();
+  renderizarConfig();
+  atualizarTudo();
+}
+
+function excluirCategoria(nome){
+  if(confirm(`Deseja realmente excluir a categoria "${nome}"?`)){
+    delete dados.categorias[nome];
+    salvarDados();
+    renderizarConfig();
+    atualizarTudo();
+  }
 }
 
 // ---------- CÁLCULOS ----------
@@ -569,7 +658,6 @@ function renderizarGraficos(){
   const nomesDespesa = Object.keys(dados.categorias).filter(n=>dados.categorias[n].tipo==="despesa");
   const valoresDespesa = nomesDespesa.map(nome => gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas));
 
-  // Filtra categorias que estão zeradas para manter o gráfico limpo
   const categoriasAtivas = [];
   const valoresAtivos = [];
   nomesDespesa.forEach((nome, i) => {
@@ -583,7 +671,6 @@ function renderizarGraficos(){
   if(graficoCategoriasChart) graficoCategoriasChart.destroy();
   
   if(valoresAtivos.length === 0) {
-    // Se não houver despesas, renderiza um estado neutro vazio
     graficoCategoriasChart = new Chart(ctx1, {
       type: "doughnut",
       data: {
@@ -679,10 +766,19 @@ function renderizarInsights(){
   });
 }
 
-// ---------- RENDER: CONFIG (orçamentos) ----------
+// ---------- RENDER: CONFIG (orçamentos e categorias) ----------
 function renderizarConfig(){
   const lista = document.getElementById("lista-orcamentos");
-  lista.innerHTML = "";
+  
+  // Botão no topo para criar nova categoria
+  lista.innerHTML = `
+    <button class="btn-primario" onclick="abrirModalCategoria()" style="margin-bottom:20px;">
+      <i class="fa-solid fa-plus"></i> Nova Categoria
+    </button>
+    <h3 style="color:#d4af37;margin:10px 0 15px;font-size:16px;">Limites de Despesas (R$)</h3>
+  `;
+
+  // Lista de despesas para edição de limites e exclusão
   Object.keys(dados.categorias)
     .filter(nome => dados.categorias[nome].tipo === "despesa")
     .forEach(nome=>{
@@ -690,11 +786,35 @@ function renderizarConfig(){
       const div = document.createElement("div");
       div.className = "config-item";
       div.innerHTML = `
-        <div class="cab"><i class="fa-solid ${cat.icone}" style="color:#d4af37;"></i>&nbsp; ${nome}</div>
-        <input type="number" min="0" step="0.01" value="${cat.orcamento}" onchange="atualizarOrcamento('${nome}', this.value)">`;
+        <div class="cab">
+          <div><i class="fa-solid ${cat.icone}" style="color:#d4af37;"></i>&nbsp; ${nome}</div>
+          <i class="fa-solid fa-trash" style="color:#F44336;cursor:pointer;" onclick="excluirCategoria('${nome}')" title="Excluir categoria"></i>
+        </div>
+        <input type="number" min="0" step="0.01" value="${cat.orcamento || 0}" onchange="atualizarOrcamento('${nome}', this.value)" placeholder="Limite R$">`;
+      lista.appendChild(div);
+    });
+
+  // Título e lista para Receitas
+  const h3Rec = document.createElement("h3");
+  h3Rec.style = "color:#4CAF50;margin:25px 0 15px;font-size:16px;";
+  h3Rec.textContent = "Categorias de Receitas";
+  lista.appendChild(h3Rec);
+
+  Object.keys(dados.categorias)
+    .filter(nome => dados.categorias[nome].tipo === "receita")
+    .forEach(nome=>{
+      const cat = dados.categorias[nome];
+      const div = document.createElement("div");
+      div.className = "config-item";
+      div.innerHTML = `
+        <div class="cab" style="margin-bottom:0;">
+          <div><i class="fa-solid ${cat.icone}" style="color:#4CAF50;"></i>&nbsp; ${nome}</div>
+          <i class="fa-solid fa-trash" style="color:#F44336;cursor:pointer;" onclick="excluirCategoria('${nome}')" title="Excluir categoria"></i>
+        </div>`;
       lista.appendChild(div);
     });
 }
+
 function atualizarOrcamento(nome, valor){
   const num = parseFloat(valor);
   if(!isNaN(num) && num >= 0){
