@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Luiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#080808;color:white;padding-bottom:90px;}
+header{background:linear-gradient(180deg,#111,#1a1a1a);padding:25px;text-align:center;border-bottom:2px solid #d4af37;}
+.logo-fallback{width:70px;height:70px;border-radius:20px;background:#1c1c1c;border:2px solid #d4af37;display:flex;align-items:center;justify-content:center;margin:0 auto 15px;font-size:30px;color:#d4af37;box-shadow:0 0 20px rgba(212,175,55,.35);}
+h1{color:#d4af37;font-size:30px;}
+.sub{color:#bbb;margin-top:5px;font-size:14px;}
+.tela{display:none;}
+.tela.ativa{display:block;}
+
+/* Filtro de Período Global */
+.filtro-periodo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 20px 5px;
+}
+.filtro-periodo button {
+  background: #171717;
+  border: 1px solid #d4af37;
+  color: #d4af37;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+.filtro-periodo button:hover {
+  background: #d4af37;
+  color: #000;
+}
+.filtro-periodo span {
+  font-size: 18px;
+  font-weight: 600;
+  min-width: 140px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:15px 20px 20px;}
+.card{background:#171717;padding:18px;border-radius:20px;text-align:center;box-shadow:0 0 15px rgba(212,175,55,.08);}
+.card i{font-size:28px;margin-bottom:12px;color:#d4af37;}
+.card h3{font-size:14px;margin-bottom:10px;}
+.valor{font-size:18px;font-weight:bold;}
+.receita{color:#4CAF50;}
+.despesa{color:#F44336;}
+.saldo{color:#03A9F4;}
+.titulo{padding:0 20px;margin-top:10px;margin-bottom:15px;font-size:22px;color:#d4af37;display:flex;justify-content:space-between;align-items:center;}
+.lista{padding:0 20px;}
+.item{background:#171717;border-radius:20px;padding:18px;margin-bottom:15px;box-shadow:0 0 10px rgba(255,255,255,.03);}
+.item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.item-left{display:flex;align-items:center;gap:12px;font-weight:600;}
+.item-left i{font-size:24px;width:35px;color:#d4af37;}
+.progress{height:10px;background:#333;border-radius:50px;overflow:hidden;}
+.progress div{height:100%;border-radius:50px;transition:width .3s;}
+.info{margin-top:8px;font-size:13px;color:#bdbdbd;}
+.verde{background:#4CAF50;}
+.amarelo{background:#FFC107;}
+.vermelho{background:#F44336;}
+.fab{position:fixed;right:20px;bottom:90px;width:70px;height:70px;border-radius:50%;background:#d4af37;border:none;font-size:30px;cursor:pointer;box-shadow:0 0 20px rgba(212,175,55,.4);z-index:50;}
+nav{position:fixed;bottom:0;left:0;right:0;height:75px;background:#111;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #2d2d2d;z-index:60;}
+nav div{display:flex;flex-direction:column;align-items:center;cursor:pointer;font-size:11px;color:#888;transition:color .2s;}
+nav div.ativo{color:#d4af37;}
+nav i{font-size:22px;margin-bottom:5px;}
+footer{text-align:center;padding:30px;font-size:13px;color:#999;}
+label{font-size:13px;color:#ccc;}
+input,select{width:100%;padding:15px;border-radius:12px;margin:8px 0 18px;border:none;background:#222;color:white;font-size:15px;}
+input:focus,select:focus{outline:2px solid #d4af37;}
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000000dd;z-index:999;overflow:auto;}
+.modal-box{background:#171717;margin:25px;padding:25px;border-radius:25px;box-shadow:0 0 25px rgba(212,175,55,.25);}
+.btn-primario{width:100%;padding:16px;background:#d4af37;color:#000;font-size:18px;font-weight:bold;border:none;border-radius:15px;cursor:pointer;}
+.btn-secundario{width:100%;padding:16px;margin-top:12px;background:#333;color:white;border:none;border-radius:15px;cursor:pointer;}
+.btn-perigo{width:100%;padding:16px;margin-top:12px;background:#F44336;color:white;border:none;border-radius:15px;cursor:pointer;}
+.transacao{display:flex;justify-content:space-between;align-items:center;background:#171717;border-radius:16px;padding:14px 18px;margin-bottom:12px;}
+.transacao .desc{font-weight:600;font-size:14px;}
+.transacao .data{font-size:12px;color:#999;margin-top:3px;}
+.vazio{text-align:center;color:#777;padding:40px 20px;font-size:14px;}
+.chart-box{background:#171717;border-radius:20px;padding:20px;margin:0 20px 20px;}
+.insight{background:#171717;border-radius:18px;padding:16px 18px;margin-bottom:14px;display:flex;gap:14px;align-items:flex-start;}
+.insight i{font-size:20px;color:#d4af37;margin-top:2px;}
+.insight .txt{font-size:14px;color:#ddd;line-height:1.4;}
+.config-item{background:#171717;border-radius:18px;padding:16px 18px;margin-bottom:14px;}
+.config-item .cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:600;}
+.config-item input{margin:0;}
+.link-orcamento{color:#d4af37;font-size:13px;cursor:pointer;text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo-fallback"><i class="fa-solid fa-crown"></i></div>
+<h1>Controle Luiz</h1>
+<div class="sub">Seu controle financeiro pessoal</div>
+</header>
+
+<!-- Seletor Global de Período -->
+<div class="filtro-periodo">
+  <button onclick="alterarMes(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+  <span id="label-periodo">Julho / 2026</span>
+  <button onclick="alterarMes(1)"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<!-- ===================== TELA DASHBOARD ===================== -->
+<div id="tela-dashboard" class="tela ativa">
+  <div class="cards">
+    <div class="card">
+      <i class="fa-solid fa-arrow-trend-up"></i>
+      <h3>Receitas</h3>
+      <div class="valor receita" id="receitas">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <i class="fa-solid fa-arrow-trend-down"></i>
+      <h3>Despesas</h3>
+      <div class="valor despesa" id="despesas">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <i class="fa-solid fa-wallet"></i>
+      <h3>Saldo</h3>
+      <div class="valor saldo" id="saldo">R$ 0,00</div>
+    </div>
+  </div>
+
+  <h2 class="titulo">Categorias (Mês Atual)</h2>
+  <div class="lista" id="lista-categorias"></div>
+</div>
+
+<!-- ===================== TELA RECEITAS/DESPESAS ===================== -->
+<div id="tela-receitas" class="tela">
+  <h2 class="titulo">Lançamentos do Mês</h2>
+  <div class="lista" id="lista-transacoes"></div>
+</div>
+
+<!-- ===================== TELA GRÁFICOS ===================== -->
+<div id="tela-graficos" class="tela">
+  <h2 class="titulo">Gráficos do Mês</h2>
+  <div class="chart-box"><canvas id="graficoCategorias"></canvas></div>
+  <div class="chart-box"><canvas id="graficoComparativo"></canvas></div>
+</div>
+
+<!-- ===================== TELA INSIGHTS ===================== -->
+<div id="tela-insights" class="tela">
+  <h2 class="titulo">Insights (Mês Atual)</h2>
+  <div class="lista" id="lista-insights"></div>
+</div>
+
+<!-- ===================== TELA CONFIG ===================== -->
+<div id="tela-config" class="tela">
+  <h2 class="titulo">Orçamentos por Categoria</h2>
+  <div class="lista" id="lista-orcamentos"></div>
+  <div class="lista">
+    <button class="btn-perigo" onclick="confirmarReset()">
+      <i class="fa-solid fa-trash"></i> Apagar todos os dados
+    </button>
+  </div>
+</div>
+
+<!-- Botão Flutuante -->
+<button class="fab" onclick="abrirFormulario()"><i class="fa-solid fa-plus"></i></button>
+
+<!-- Formulário Novo Lançamento -->
+<div id="formulario" class="modal-bg">
+  <div class="modal-box">
+    <h2 style="text-align:center;color:#d4af37;margin-bottom:25px;" id="titulo-form">Novo Lançamento</h2>
+    <input type="hidden" id="input-id">
+
+    <label>Tipo</label>
+    <select id="input-tipo" onchange="atualizarCategoriasForm()">
+      <option value="despesa">Despesa</option>
+      <option value="receita">Receita</option>
+    </select>
+
+    <label>Categoria</label>
+    <select id="input-categoria"></select>
+
+    <label>Valor</label>
+    <input type="number" id="input-valor" placeholder="Digite o valor" min="0" step="0.01">
+
+    <label>Forma de Pagamento</label>
+    <select id="input-forma">
+      <option>PIX</option>
+      <option>Débito</option>
+      <option>Crédito</option>
+      <option>Dinheiro</option>
+    </select>
+
+    <label>Data</label>
+    <input type="date" id="input-data">
+
+    <div id="erro-form" style="color:#F44336;font-size:13px;margin-bottom:10px;display:none;"></div>
+
+    <button class="btn-primario" onclick="salvarLancamento()">Salvar</button>
+    <button class="btn-secundario" onclick="fecharFormulario()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal de confirmação de reset -->
+<div id="modal-reset" class="modal-bg">
+  <div class="modal-box">
+    <h2 style="text-align:center;color:#F44336;margin-bottom:15px;">Apagar tudo?</h2>
+    <p style="text-align:center;color:#ccc;margin-bottom:25px;">Essa ação vai remover todos os lançamentos e orçamentos salvos neste dispositivo. Não é possível desfazer.</p>
+    <button class="btn-perigo" onclick="resetarDados()">Sim, apagar tudo</button>
+    <button class="btn-secundario" onclick="document.getElementById('modal-reset').style.display='none'">Cancelar</button>
+  </div>
+</div>
+
+<!-- Menu -->
+<nav>
+  <div id="nav-dashboard" class="ativo" onclick="mostrarTela('dashboard')"><i class="fa-solid fa-house"></i><span>Início</span></div>
+  <div id="nav-receitas" onclick="mostrarTela('receitas')"><i class="fa-solid fa-money-bill-wave"></i><span>Lançamentos</span></div>
+  <div id="nav-graficos" onclick="mostrarTela('graficos')"><i class="fa-solid fa-chart-pie"></i><span>Gráficos</span></div>
+  <div id="nav-insights" onclick="mostrarTela('insights')"><i class="fa-solid fa-lightbulb"></i><span>Insights</span></div>
+  <div id="nav-config" onclick="mostrarTela('config')"><i class="fa-solid fa-gear"></i><span>Config.</span></div>
+</nav>
+
+<footer>
+  Controle Luiz<br>
+  Versão 2.1<br><br>
+  Desenvolvido por <b>Luiz Costa</b>
+</footer>
+
+<script>
+/* =========================================================
+   CONTROLE LUIZ — lógica completa (v2.1)
+   Dados salvos no localStorage do navegador (uso offline)
+   ========================================================= */
+
+const CHAVE_DADOS = "controleLuiz_dados_v2";
+
+const CATEGORIAS_PADRAO = {
+  "Compras do Mês":  { icone: "fa-cart-shopping",  tipo: "despesa", orcamento: 800 },
+  "Alimentação":     { icone: "fa-utensils",       tipo: "despesa", orcamento: 1000 },
+  "Combustível":     { icone: "fa-gas-pump",       tipo: "despesa", orcamento: 700 },
+  "Thais":           { icone: "fa-heart",          tipo: "despesa", orcamento: 500 },
+  "Breno":           { icone: "fa-child",          tipo: "despesa", orcamento: 300 },
+  "Academia":        { icone: "fa-dumbbell",       tipo: "despesa", orcamento: 150 },
+  "Remédios":        { icone: "fa-pills",          tipo: "despesa", orcamento: 200 },
+  "Lazer":           { icone: "fa-film",           tipo: "despesa", orcamento: 300 },
+  "Gastos com Carro":{ icone: "fa-car-side",       tipo: "despesa", orcamento: 400 },
+  "Salário":              { icone: "fa-sack-dollar",  tipo: "receita" },
+  "Vale":                 { icone: "fa-ticket",       tipo: "receita" },
+  "13º Salário":          { icone: "fa-gift",          tipo: "receita" },
+  "Venda":                { icone: "fa-tag",          tipo: "receita" },
+  "Proventos de Ações":   { icone: "fa-chart-line",   tipo: "receita" },
+  "Proventos FIIs":       { icone: "fa-building",     tipo: "receita" },
+  "Nota Fiscal Paulista": { icone: "fa-receipt",      tipo: "receita" },
+  "Restituição IR":       { icone: "fa-file-invoice-dollar", tipo: "receita" },
+  "Outras Receitas":      { icone: "fa-coins",        tipo: "receita" }
+};
+
+// Gerador de datas dinâmico baseado no ano/mês local atual
+const dataAtualObj = new Date();
+const anoCorrente = dataAtualObj.getFullYear();
+const mesCorrente = String(dataAtualObj.getMonth() + 1).padStart(2, '0');
+
+const TRANSACOES_EXEMPLO = [
+  { tipo:"receita", categoria:"Salário", valor:12800, forma:"PIX", data: `${anoCorrente}-${mesCorrente}-05` },
+  { tipo:"despesa", categoria:"Compras do Mês",  valor:650, forma:"Crédito", data: `${anoCorrente}-${mesCorrente}-08` },
+  { tipo:"despesa", categoria:"Alimentação",     valor:980, forma:"Débito",  data: `${anoCorrente}-${mesCorrente}-10` },
+  { tipo:"despesa", categoria:"Combustível",     valor:760, forma:"PIX",     data: `${anoCorrente}-${mesCorrente}-12` },
+  { tipo:"despesa", categoria:"Thais",           valor:320, forma:"PIX",     data: `${anoCorrente}-${mesCorrente}-15` },
+  { tipo:"despesa", categoria:"Breno",           valor:180, forma:"Dinheiro",data: `${anoCorrente}-${mesCorrente}-15` },
+  { tipo:"despesa", categoria:"Academia",        valor:120, forma:"Crédito", data: `${anoCorrente}-${mesCorrente}-20` },
+  { tipo:"despesa", categoria:"Remédios",        valor:45,  forma:"PIX",     data: `${anoCorrente}-${mesCorrente}-22` },
+  { tipo:"despesa", categoria:"Lazer",           valor:390, forma:"Crédito", data: `${anoCorrente}-${mesCorrente}-24` },
+  { tipo:"despesa", categoria:"Gastos com Carro",valor:210, forma:"Débito",  data: `${anoCorrente}-${mesCorrente}-25` }
+];
+
+function hojeISO(){ return new Date().toISOString().slice(0,10); }
+
+// Instanciando o Estado Temporal do App
+let dataFiltro = new Date(); // Inicia com o mês atual
+let dados = carregarDados();
+let graficoCategoriasChart = null;
+let graficoComparativoChart = null;
+
+// ---------- PERSISTÊNCIA ----------
+function carregarDados(){
+  try{
+    const salvo = localStorage.getItem(CHAVE_DADOS);
+    if(salvo){
+      const parsed = JSON.parse(salvo);
+      if(parsed && parsed.categorias && parsed.transacoes) return parsed;
+    }
+  }catch(e){
+    console.warn("Não foi possível ler dados salvos, iniciando do zero.", e);
+  }
+  
+  const categoriasIniciais = {};
+  Object.keys(CATEGORIAS_PADRAO).forEach(nome=>{
+    categoriasIniciais[nome] = { ...CATEGORIAS_PADRAO[nome] };
+  });
+
+  // Correção de concorrência com IDs incrementais explícitos no mock
+  return {
+    categorias: categoriasIniciais,
+    transacoes: TRANSACOES_EXEMPLO.map((t, i) => ({ id: Date.now() + i, ...t }))
+  };
+}
+
+function salvarDados(){
+  try{
+    localStorage.setItem(CHAVE_DADOS, JSON.stringify(dados));
+  }catch(e){
+    console.warn("Não foi possível salvar os dados neste ambiente.", e);
+  }
+}
+
+// ---------- CONTROLE DE PERÍODO ----------
+function atualizarLabelPeriodo() {
+  const meses = ["Janeiro", "Fevereiro", "Março", "April", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const mesExtenso = meses[dataFiltro.getMonth()];
+  const ano = dataFiltro.getFullYear();
+  document.getElementById("label-periodo").textContent = `${mesExtenso} / ${ano}`;
+}
+
+function alterarMes(direcao) {
+  dataFiltro.setMonth(dataFiltro.getMonth() + direcao);
+  atualizarLabelPeriodo();
+  atualizarTudo();
+}
+
+// Retorna apenas transações que pertencem ao mês/ano selecionado no filtro
+function filtrarTransacoesDoPeriodo() {
+  const anoFiltro = dataFiltro.getFullYear();
+  const mesFiltro = dataFiltro.getMonth(); // 0 a 11
+  
+  return dados.transacoes.filter(t => {
+    const dataTransacao = new Date(t.data + 'T00:00:00'); // Trata timezone local
+    return dataTransacao.getFullYear() === anoFiltro && dataTransacao.getMonth() === mesFiltro;
+  });
+}
+
+// ---------- NAVEGAÇÃO ----------
+function mostrarTela(nome){
+  document.querySelectorAll(".tela").forEach(t=>t.classList.remove("ativa"));
+  document.querySelectorAll("nav div").forEach(n=>n.classList.remove("ativo"));
+  document.getElementById("tela-"+nome).classList.add("ativa");
+  document.getElementById("nav-"+nome).classList.add("ativo");
+
+  if(nome==="dashboard") atualizarTudo();
+  if(nome==="receitas") renderizarTransacoes();
+  if(nome==="graficos") renderizarGraficos();
+  if(nome==="insights") renderizarInsights();
+  if(nome==="config") renderizarConfig();
+}
+
+// ---------- FORMULÁRIO ----------
+function abrirFormulario(id = null){
+  document.getElementById("erro-form").style.display = "none";
+  atualizarCategoriasForm();
+
+  if (id) {
+    // Modo Edição
+    const t = dados.transacoes.find(item => item.id === id);
+    if (!t) return;
+    document.getElementById("titulo-form").textContent = "Editar Lançamento";
+    document.getElementById("input-id").value = t.id;
+    document.getElementById("input-tipo").value = t.tipo;
+    atualizarCategoriasForm();
+    document.getElementById("input-categoria").value = t.categoria;
+    document.getElementById("input-valor").value = t.valor;
+    document.getElementById("input-forma").value = t.forma;
+    document.getElementById("input-data").value = t.data;
+  } else {
+    // Modo Novo Lançamento
+    document.getElementById("titulo-form").textContent = "Novo Lançamento";
+    document.getElementById("input-id").value = "";
+    document.getElementById("input-data").value = hojeISO();
+    document.getElementById("input-tipo").value = "despesa";
+    atualizarCategoriasForm();
+    document.getElementById("input-valor").value = "";
+  }
+  
+  document.getElementById("formulario").style.display = "block";
+}
+
+function fecharFormulario(){
+  document.getElementById("formulario").style.display = "none";
+}
+
+function atualizarCategoriasForm(){
+  const tipo = document.getElementById("input-tipo").value;
+  const select = document.getElementById("input-categoria");
+  select.innerHTML = "";
+  Object.keys(dados.categorias)
+    .filter(nome => dados.categorias[nome].tipo === tipo)
+    .forEach(nome=>{
+      const opt = document.createElement("option");
+      opt.value = nome;
+      opt.textContent = nome;
+      select.appendChild(opt);
+    });
+}
+
+function salvarLancamento(){
+  const id = document.getElementById("input-id").value;
+  const tipo = document.getElementById("input-tipo").value;
+  const categoria = document.getElementById("input-categoria").value;
+  const valor = parseFloat(document.getElementById("input-valor").value);
+  const forma = document.getElementById("input-forma").value;
+  const data = document.getElementById("input-data").value;
+  const erroEl = document.getElementById("erro-form");
+
+  if(!categoria || isNaN(valor) || valor <= 0 || !data){
+    erroEl.textContent = "Preencha um valor válido e a data antes de salvar.";
+    erroEl.style.display = "block";
+    return;
+  }
+
+  if (id) {
+    // Editando item existente
+    const idx = dados.transacoes.findIndex(t => t.id === parseInt(id));
+    if (idx !== -1) {
+      dados.transacoes[idx] = { id: parseInt(id), tipo, categoria, valor, forma, data };
+    }
+  } else {
+    // Inserindo novo item
+    dados.transacoes.push({ id: Date.now(), tipo, categoria, valor, forma, data });
+  }
+
+  salvarDados();
+  fecharFormulario();
+  
+  // Sincroniza a visualização do calendário com a data do lançamento que foi salvo
+  const dataLancamento = new Date(data + 'T00:00:00');
+  dataFiltro = dataLancamento;
+  atualizarLabelPeriodo();
+
+  atualizarTudo();
+}
+
+// ---------- CÁLCULOS ----------
+function totalPorTipoNoPeriodo(tipo, transacoesFiltradas){
+  return transacoesFiltradas.filter(t=>t.tipo===tipo).reduce((soma,t)=>soma+t.valor,0);
+}
+
+function gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas){
+  return transacoesFiltradas
+    .filter(t=>t.categoria===nome && t.tipo==="despesa")
+    .reduce((soma,t)=>soma+t.valor,0);
+}
+
+function formatarMoeda(v){
+  return "R$ " + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ---------- RENDER: DASHBOARD ----------
+function atualizarTudo(){
+  const transacoesFiltradas = filtrarTransacoesDoPeriodo();
+  
+  const receitas = totalPorTipoNoPeriodo("receita", transacoesFiltradas);
+  const despesas = totalPorTipoNoPeriodo("despesa", transacoesFiltradas);
+  const saldo = receitas - despesas;
+
+  document.getElementById("receitas").textContent = formatarMoeda(receitas);
+  document.getElementById("despesas").textContent = formatarMoeda(despesas);
+  document.getElementById("saldo").textContent = formatarMoeda(saldo);
+  document.getElementById("saldo").style.color = saldo >= 0 ? "#03A9F4" : "#F44336";
+
+  renderizarCategorias(transacoesFiltradas);
+
+  const telaAtiva = document.querySelector(".tela.ativa").id.replace("tela-","");
+  if(telaAtiva==="receitas") renderizarTransacoes();
+  if(telaAtiva==="graficos") renderizarGraficos();
+  if(telaAtiva==="insights") renderizarInsights();
+  if(telaAtiva==="config") renderizarConfig();
+}
+
+function renderizarCategorias(transacoesFiltradas){
+  const lista = document.getElementById("lista-categorias");
+  lista.innerHTML = "";
+  Object.keys(dados.categorias)
+    .filter(nome => dados.categorias[nome].tipo === "despesa")
+    .forEach(nome=>{
+      const cat = dados.categorias[nome];
+      const gasto = gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas);
+      const orcamento = cat.orcamento || 0;
+      const pct = orcamento > 0 ? Math.min((gasto/orcamento)*100, 100) : (gasto>0?100:0);
+      const pctReal = orcamento > 0 ? (gasto/orcamento)*100 : 0;
+
+      let cor = "verde", info = "Dentro do orçamento.";
+      if(pctReal >= 100){
+        cor = "vermelho";
+        info = `Você ultrapassou ${formatarMoeda(gasto-orcamento)}.`;
+      } else if(pctReal >= 80){
+        cor = "amarelo";
+        info = `Você atingiu ${Math.round(pctReal)}% do orçamento.`;
+      } else {
+        info = `Restam ${formatarMoeda(Math.max(orcamento-gasto,0))}.`;
+      }
+
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div class="item-top">
+          <div class="item-left"><i class="fa-solid ${cat.icone}"></i><span>${nome}</span></div>
+          <b>${formatarMoeda(gasto)} / ${formatarMoeda(orcamento)}</b>
+        </div>
+        <div class="progress"><div class="${cor}" style="width:${pct}%;"></div></div>
+        <div class="info">${info}</div>`;
+      lista.appendChild(div);
+    });
+}
+
+// ---------- RENDER: LANÇAMENTOS ----------
+function renderizarTransacoes(){
+  const lista = document.getElementById("lista-transacoes");
+  lista.innerHTML = "";
+  
+  const transacoesFiltradas = filtrarTransacoesDoPeriodo();
+  const ordenadas = [...transacoesFiltradas].sort((a,b)=> new Date(b.data) - new Date(a.data));
+
+  if(ordenadas.length === 0){
+    lista.innerHTML = `<div class="vazio">Nenhum lançamento neste mês. Toque no + para adicionar.</div>`;
+    return;
+  }
+
+  ordenadas.forEach(t=>{
+    const cat = dados.categorias[t.categoria] || { icone: "fa-circle" };
+    const cor = t.tipo === "receita" ? "#4CAF50" : "#F44336";
+    const sinal = t.tipo === "receita" ? "+" : "-";
+    const div = document.createElement("div");
+    div.className = "transacao";
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;">
+        <i class="fa-solid ${cat.icone}" style="color:#d4af37;width:22px;"></i>
+        <div>
+          <div class="desc">${t.categoria}</div>
+          <div class="data">${formatarData(t.data)} · ${t.forma}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <b style="color:${cor}">${sinal} ${formatarMoeda(t.valor)}</b>
+        <i class="fa-solid fa-pen" style="color:#888;cursor:pointer;margin-left:8px;" onclick="abrirFormulario(${t.id})"></i>
+        <i class="fa-solid fa-trash" style="color:#666;cursor:pointer;margin-left:8px;" onclick="excluirTransacao(${t.id})"></i>
+      </div>`;
+    lista.appendChild(div);
+  });
+}
+function formatarData(iso){
+  const [ano,mes,dia] = iso.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+function excluirTransacao(id){
+  dados.transacoes = dados.transacoes.filter(t=>t.id !== id);
+  salvarDados();
+  atualizarTudo();
+}
+
+// ---------- RENDER: GRÁFICOS ----------
+function renderizarGraficos(){
+  const transacoesFiltradas = filtrarTransacoesDoPeriodo();
+  const nomesDespesa = Object.keys(dados.categorias).filter(n=>dados.categorias[n].tipo==="despesa");
+  const valoresDespesa = nomesDespesa.map(nome => gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas));
+
+  // Filtra categorias que estão zeradas para manter o gráfico limpo
+  const categoriasAtivas = [];
+  const valoresAtivos = [];
+  nomesDespesa.forEach((nome, i) => {
+    if (valoresDespesa[i] > 0) {
+      categoriasAtivas.push(nome);
+      valoresAtivos.push(valoresDespesa[i]);
+    }
+  });
+
+  const ctx1 = document.getElementById("graficoCategorias").getContext("2d");
+  if(graficoCategoriasChart) graficoCategoriasChart.destroy();
+  
+  if(valoresAtivos.length === 0) {
+    // Se não houver despesas, renderiza um estado neutro vazio
+    graficoCategoriasChart = new Chart(ctx1, {
+      type: "doughnut",
+      data: {
+        labels: ["Sem despesas registradas"],
+        datasets: [{ data: [1], backgroundColor: ["#222"] }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: "#888" } }, title:{ display:true, text:"Nenhuma despesa no período", color:"#888" } }
+      }
+    });
+  } else {
+    graficoCategoriasChart = new Chart(ctx1, {
+      type: "doughnut",
+      data: {
+        labels: categoriasAtivas,
+        datasets: [{
+          data: valoresAtivos,
+          backgroundColor: ["#d4af37","#4CAF50","#F44336","#03A9F4","#FFC107","#9C27B0","#FF5722","#009688","#795548"]
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: "#eee", font:{size:11} } }, title:{ display:true, text:"Despesas por categoria", color:"#d4af37" } }
+      }
+    });
+  }
+
+  const receitas = totalPorTipoNoPeriodo("receita", transacoesFiltradas);
+  const despesas = totalPorTipoNoPeriodo("despesa", transacoesFiltradas);
+  
+  const ctx2 = document.getElementById("graficoComparativo").getContext("2d");
+  if(graficoComparativoChart) graficoComparativoChart.destroy();
+  graficoComparativoChart = new Chart(ctx2, {
+    type: "bar",
+    data: {
+      labels: ["Receitas","Despesas"],
+      datasets: [{ data: [receitas, despesas], backgroundColor: ["#4CAF50","#F44336"] }]
+    },
+    options: {
+      plugins: { legend: { display:false }, title:{ display:true, text:"Receitas x Despesas (Mês)", color:"#d4af37" } },
+      scales: { x:{ ticks:{ color:"#ccc" } }, y:{ ticks:{ color:"#ccc" } } }
+    }
+  });
+}
+
+// ---------- RENDER: INSIGHTS ----------
+function renderizarInsights(){
+  const lista = document.getElementById("lista-insights");
+  lista.innerHTML = "";
+  const insights = [];
+
+  const transacoesFiltradas = filtrarTransacoesDoPeriodo();
+  const receitas = totalPorTipoNoPeriodo("receita", transacoesFiltradas);
+  const despesas = totalPorTipoNoPeriodo("despesa", transacoesFiltradas);
+  const saldo = receitas - despesas;
+
+  if(transacoesFiltradas.length === 0){
+    lista.innerHTML = `<div class="vazio">Sem movimentações registradas neste mês. Adicione lançamentos para gerar insights.</div>`;
+    return;
+  }
+
+  if(saldo < 0){
+    insights.push({ icone:"fa-triangle-exclamation", txt:`Suas despesas superaram as receitas em ${formatarMoeda(Math.abs(saldo))} neste mês.` });
+  } else {
+    insights.push({ icone:"fa-thumbs-up", txt:`Você está com saldo positivo de ${formatarMoeda(saldo)} neste mês.` });
+  }
+
+  const categoriasDespesa = Object.keys(dados.categorias).filter(n=>dados.categorias[n].tipo==="despesa");
+  let categoriaTopo = null, maiorGasto = 0;
+  const estourou = [];
+  categoriasDespesa.forEach(nome=>{
+    const gasto = gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas);
+    if(gasto > maiorGasto){ maiorGasto = gasto; categoriaTopo = nome; }
+    const orc = dados.categorias[nome].orcamento || 0;
+    if(orc > 0 && gasto > orc) estourou.push(nome);
+  });
+
+  if(categoriaTopo && maiorGasto > 0){
+    insights.push({ icone:"fa-magnifying-glass-chart", txt:`Sua maior despesa este mês foi em "${categoriaTopo}", totalizando ${formatarMoeda(maiorGasto)}.` });
+  }
+  if(estourou.length > 0){
+    insights.push({ icone:"fa-fire", txt:`Você estourou o orçamento mensal planejado em: ${estourou.join(", ")}.` });
+  }
+  if(despesas > 0 && receitas > 0){
+    const pctComprometido = (despesas/receitas)*100;
+    insights.push({ icone:"fa-percent", txt:`Você já comprometeu ${pctComprometido.toFixed(0)}% de suas receitas com as despesas mensais.` });
+  }
+
+  insights.forEach(i=>{
+    const div = document.createElement("div");
+    div.className = "insight";
+    div.innerHTML = `<i class="fa-solid ${i.icone}"></i><div class="txt">${i.txt}</div>`;
+    lista.appendChild(div);
+  });
+}
+
+// ---------- RENDER: CONFIG (orçamentos) ----------
+function renderizarConfig(){
+  const lista = document.getElementById("lista-orcamentos");
+  lista.innerHTML = "";
+  Object.keys(dados.categorias)
+    .filter(nome => dados.categorias[nome].tipo === "despesa")
+    .forEach(nome=>{
+      const cat = dados.categorias[nome];
+      const div = document.createElement("div");
+      div.className = "config-item";
+      div.innerHTML = `
+        <div class="cab"><i class="fa-solid ${cat.icone}" style="color:#d4af37;"></i>&nbsp; ${nome}</div>
+        <input type="number" min="0" step="0.01" value="${cat.orcamento}" onchange="atualizarOrcamento('${nome}', this.value)">`;
+      lista.appendChild(div);
+    });
+}
+function atualizarOrcamento(nome, valor){
+  const num = parseFloat(valor);
+  if(!isNaN(num) && num >= 0){
+    dados.categorias[nome].orcamento = num;
+    salvarDados();
+    atualizarTudo();
+  }
+}
+
+// ---------- RESET ----------
+function confirmarReset(){
+  document.getElementById("modal-reset").style.display = "block";
+}
+function resetarDados(){
+  localStorage.removeItem(CHAVE_DADOS);
+  dados = carregarDados();
+  dados.transacoes = [];
+  salvarDados();
+  document.getElementById("modal-reset").style.display = "none";
+  atualizarTudo();
+}
+
+// ---------- INICIALIZAÇÃO ----------
+atualizarLabelPeriodo();
+atualizarTudo();
+</script>
+</body>
+</html>
