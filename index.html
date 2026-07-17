@@ -1,3 +1,8 @@
+
+Adicionar a exportação para CSV é uma excelente sacada para manter o controle total dos dados e facilitar a importação direta no Excel ou no Google Sheets.
+Para fazer isso da forma mais limpa e integrada, adicionei o botão **"Exportar para Excel/Sheets (CSV)"** na aba **Configurações & Orçamentos (Config.)**, logo acima do botão de apagar os dados. O script lida automaticamente com a conversão de caracteres especiais e usa o ponto e vírgula (;) como separador, que é o padrão reconhecido automaticamente pelo Excel em português.
+Aqui está o código completo do seu aplicativo atualizado para a versão **3.1**:
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -102,6 +107,7 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 .modal-box{background:#171717;margin:25px;padding:25px;border-radius:25px;box-shadow:0 0 25px rgba(212,175,55,.25);}
 .btn-primario{width:100%;padding:16px;background:#d4af37;color:#000;font-size:18px;font-weight:bold;border:none;border-radius:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
 .btn-secundario{width:100%;padding:16px;margin-top:12px;background:#333;color:white;border:none;border-radius:15px;cursor:pointer;}
+.btn-sucesso{width:100%;padding:16px;margin-top:12px;background:#4CAF50;color:white;font-size:16px;font-weight:bold;border:none;border-radius:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
 .btn-perigo{width:100%;padding:16px;margin-top:12px;background:#F44336;color:white;border:none;border-radius:15px;cursor:pointer;}
 .transacao{display:flex;justify-content:space-between;align-items:center;background:#171717;border-radius:16px;padding:14px 18px;margin-bottom:12px;}
 .transacao .desc{font-weight:600;font-size:14px;}
@@ -218,6 +224,9 @@ input:focus,select:focus{outline:2px solid #d4af37;}
   <div id="status-salvamento" class="alerta-salvo">Alterações salvas com sucesso!</div>
   <div class="lista" id="lista-orcamentos"></div>
   <div class="lista">
+    <button class="btn-sucesso" onclick="exportarParaCSV()">
+      <i class="fa-solid fa-file-excel"></i> Exportar para Excel/Google Sheets
+    </button>
     <button class="btn-perigo" onclick="confirmarReset()">
       <i class="fa-solid fa-trash"></i> Apagar todos os dados
     </button>
@@ -372,14 +381,14 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 
 <footer>
   Controle Luiz<br>
-  Versão 3.0<br><br>
+  Versão 3.1<br><br>
   Desenvolvido por <b>Luiz Costa</b>
 </footer>
 
 <script>
 /* =========================================================
-   CONTROLE LUIZ — lógica completa (v3.0)
-   Dados completamente zerados e salvos localmente
+   CONTROLE LUIZ — lógica completa (v3.1)
+   Dados salvos localmente e exportação habilitada
    ========================================================= */
 
 const CHAVE_DADOS = "controleLuiz_dados_v3";
@@ -559,6 +568,13 @@ function atualizarCategoriasForm(){
     });
 }
 
+function hojeISO() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
 function salvarLancamento(){
   const id = document.getElementById("input-id").value;
   const tipo = document.getElementById("input-tipo").value;
@@ -664,6 +680,42 @@ function gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas){
 
 function formatarMoeda(v){
   return "R$ " + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ---------- EXPORTAR PARA EXCEL (CSV) ----------
+function exportarParaCSV() {
+  if (dados.transacoes.length === 0) {
+    alert("Nenhum lançamento cadastrado para ser exportado.");
+    return;
+  }
+
+  // Cabeçalho compatível com o Excel em português (; como separador)
+  let csvContent = "sep=;\nID;Data;Tipo;Categoria;Valor;Forma de Pagamento\n";
+
+  dados.transacoes.forEach(t => {
+    // Formata a data para DD/MM/AAAA
+    const dataFormatada = formatarData(t.data);
+    // Substitui ponto por vírgula no decimal para abrir formatado no Excel em PT-BR
+    const valorFormatado = t.valor.toFixed(2).replace(".", ",");
+    // Protege textos com aspas caso contenham pontuação indesejada
+    const categoria = `"${t.categoria.replace(/"/g, '""')}"`;
+    const forma = `"${(t.forma || 'Não Informado').replace(/"/g, '""')}"`;
+    const tipo = t.tipo === "receita" ? "Receita" : "Despesa";
+
+    csvContent += `${t.id};${dataFormatada};${tipo};${categoria};${valorFormatado};${forma}\n`;
+  });
+
+  // Força o encode UTF-8 correto adicionando BOM (evita quebra de acentuação no Excel)
+  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `controle_financeiro_luiz_${hojeISO()}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // ---------- RENDER: DASHBOARD ----------
@@ -994,10 +1046,10 @@ function renderizarInsights(){
     insights.push({ icone:"fa-thumbs-up", txt:`Você está com saldo positivo de ${formatarMoeda(saldo)} neste mês.` });
   }
 
-  const categoriasDespesa = Object.keys(dados.categorias).filter(n=>dados.categorias[n].tipo==="despesa");
+  const categoriesDespesa = Object.keys(dados.categorias).filter(n=>dados.categorias[n].tipo==="despesa");
   let categoriaTopo = null, maiorGasto = 0;
   const estourou = [];
-  categoriasDespesa.forEach(nome=>{
+  categoriesDespesa.forEach(nome=>{
     const gasto = gastoPorCategoriaNoPeriodo(nome, transacoesFiltradas);
     if(gasto > maiorGasto){ maiorGasto = gasto; categoriaTopo = nome; }
     
