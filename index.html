@@ -89,7 +89,7 @@ h1{color:#d4af37;font-size:30px;}
 .fab{position:fixed;right:20px;bottom:105px;width:70px;height:70px;border-radius:50%;background:#d4af37;border:none;font-size:30px;cursor:pointer;box-shadow:0 0 20px rgba(212,175,55,.4);z-index:50;}
 
 /* Menu Inferior */
-nav{position:fixed;bottom:0;left:0;right:0;height:85px;background:#111;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #2d2d2d;z-index:60;padding-bottom:5px;}
+nav{position:fixed;bottom:0;left:0;right:0;height:85px;background:#111;display:flex;justify-space-around;align-items:center;border-top:1px solid #2d2d2d;z-index:60;padding-bottom:5px;}
 nav div{display:flex;flex-direction:column;align-items:center;cursor:pointer;font-size:9px;color:#888;transition:color .2s;flex:1;text-align:center;}
 nav div.ativo{color:#d4af37;}
 nav i{font-size:18px;margin-bottom:5px;}
@@ -292,6 +292,7 @@ input:focus,select:focus{outline:2px solid #d4af37;}
       <option>PIX</option>
       <option>Débito</option>
       <option>Crédito</option>
+      <option>VA/VR</option>
       <option>Dinheiro</option>
       <option>Boleto</option>
       <option>Débito Automático</option>
@@ -950,7 +951,7 @@ function renderizarGraficos(){
     }
   });
 
-  const metodosDisponiveis = ["PIX", "Débito", "Crédito", "Dinheiro", "Boleto", "Débito Automático"];
+  const metodosDisponiveis = ["PIX", "Débito", "Crédito", "VA/VR", "Dinheiro", "Boleto", "Débito Automático"];
   const somaPorMetodo = Array(metodosDisponiveis.length).fill(0);
   transacoesDoMes.filter(t => t.tipo === "despesa").forEach(t => {
     const formaNormalizada = t.forma || "PIX";
