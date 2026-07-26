@@ -106,6 +106,7 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 .btn-perigo{width:100%;padding:16px;margin-top:12px;background:#F44336;color:white;border:none;border-radius:15px;cursor:pointer;}
 .transacao{display:flex;justify-content:space-between;align-items:center;background:#171717;border-radius:16px;padding:14px 18px;margin-bottom:12px;}
 .transacao .desc{font-weight:600;font-size:14px;}
+.transacao .obs{font-size:12px;color:#d4af37;margin-top:2px;font-style:italic;}
 .transacao .data{font-size:12px;color:#999;margin-top:3px;}
 .vazio{text-align:center;color:#777;padding:40px 20px;font-size:14px;}
 .chart-box{background:#171717;border-radius:20px;padding:20px;margin:0 20px 20px;}
@@ -284,6 +285,9 @@ input:focus,select:focus{outline:2px solid #d4af37;}
     <label>Categoria</label>
     <select id="input-categoria"></select>
 
+    <label>Descrição / Observação (Opcional)</label>
+    <input type="text" id="input-descricao" placeholder="Ex: Mercado do mês, Troca de óleo, Almoço domingo...">
+
     <label>Valor</label>
     <input type="number" id="input-valor" placeholder="Digite o valor" min="0" step="0.01">
 
@@ -377,13 +381,13 @@ input:focus,select:focus{outline:2px solid #d4af37;}
 
 <footer>
   Controle Luiz<br>
-  Versão 3.2<br><br>
+  Versão 3.3<br><br>
   Desenvolvido por <b>Luiz Costa</b>
 </footer>
 
 <script>
 /* =========================================================
-   CONTROLE LUIZ — lógica completa (v3.2)
+   CONTROLE LUIZ — lógica completa (v3.3 com Descrição Livre)
    ========================================================= */
 
 const CHAVE_DADOS = "controleLuiz_dados_v3";
@@ -521,8 +525,8 @@ function filtrarTransacoesDoPeriodo() {
   const mesFiltro = dataFiltro.getMonth();
   
   return dados.transacoes.filter(t => {
-    const dataTransacao = new Date(t.data + 'T00:00:00');
-    return dataTransacao.getFullYear() === anoFiltro && dataTransacao.getMonth() === mesFiltro;
+    const [ano, mes, dia] = t.data.split('-').map(Number);
+    return ano === anoFiltro && (mes - 1) === mesFiltro;
   });
 }
 
@@ -561,6 +565,7 @@ function abrirFormulario(id = null){
     document.getElementById("input-tipo").value = t.tipo;
     atualizarCategoriasForm();
     document.getElementById("input-categoria").value = t.categoria;
+    document.getElementById("input-descricao").value = t.descricao || "";
     document.getElementById("input-valor").value = t.valor;
     document.getElementById("input-forma").value = t.forma || "PIX";
     document.getElementById("input-data").value = t.data;
@@ -570,6 +575,7 @@ function abrirFormulario(id = null){
     document.getElementById("input-data").value = hojeISO();
     document.getElementById("input-tipo").value = "despesa";
     atualizarCategoriasForm();
+    document.getElementById("input-descricao").value = "";
     document.getElementById("input-valor").value = "";
   }
   
@@ -605,6 +611,7 @@ function salvarLancamento(){
   const id = document.getElementById("input-id").value;
   const tipo = document.getElementById("input-tipo").value;
   const categoria = document.getElementById("input-categoria").value;
+  const descricao = document.getElementById("input-descricao").value.trim();
   const valor = parseFloat(document.getElementById("input-valor").value);
   const forma = document.getElementById("input-forma").value;
   const data = document.getElementById("input-data").value;
@@ -619,17 +626,17 @@ function salvarLancamento(){
   if (id) {
     const idx = dados.transacoes.findIndex(t => t.id === parseInt(id));
     if (idx !== -1) {
-      dados.transacoes[idx] = { id: parseInt(id), tipo, categoria, valor, forma, data };
+      dados.transacoes[idx] = { id: parseInt(id), tipo, categoria, descricao, valor, forma, data };
     }
   } else {
-    dados.transacoes.push({ id: Date.now(), tipo, categoria, valor, forma, data });
+    dados.transacoes.push({ id: Date.now(), tipo, categoria, descricao, valor, forma, data });
   }
 
   salvarDados();
   fecharFormulario();
   
-  const dataLancamento = new Date(data + 'T00:00:00');
-  dataFiltro = dataLancamento;
+  const [ano, mes, dia] = data.split('-').map(Number);
+  dataFiltro = new Date(ano, mes - 1, dia);
   atualizarLabelPeriodo();
 
   atualizarTudo();
@@ -700,16 +707,17 @@ function exportarParaCSV() {
     return;
   }
 
-  let csvContent = "sep=;\nID;Data;Tipo;Categoria;Valor;Forma de Pagamento\n";
+  let csvContent = "sep=;\nID;Data;Tipo;Categoria;Descrição;Valor;Forma de Pagamento\n";
 
   dados.transacoes.forEach(t => {
     const dataFormatada = formatarData(t.data);
     const valorFormatado = t.valor.toFixed(2).replace(".", ",");
     const categoria = `"${t.categoria.replace(/"/g, '""')}"`;
+    const descricao = `"${(t.descricao || '').replace(/"/g, '""')}"`;
     const forma = `"${(t.forma || 'Não Informado').replace(/"/g, '""')}"`;
     const tipo = t.tipo === "receita" ? "Receita" : "Despesa";
 
-    csvContent += `${t.id};${dataFormatada};${tipo};${categoria};${valorFormatado};${forma}\n`;
+    csvContent += `${t.id};${dataFormatada};${tipo};${categoria};${descricao};${valorFormatado};${forma}\n`;
   });
 
   const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -819,6 +827,8 @@ function renderizarTransacoes(){
     const cat = dados.categorias[t.categoria] || { icone: "fa-circle" };
     const cor = t.tipo === "receita" ? "#4CAF50" : "#F44336";
     const sinal = t.tipo === "receita" ? "+" : "-";
+    const htmlObs = t.descricao ? `<div class="obs"><i class="fa-regular fa-note-sticky"></i> ${t.descricao}</div>` : '';
+
     const div = document.createElement("div");
     div.className = "transacao";
     div.innerHTML = `
@@ -826,6 +836,7 @@ function renderizarTransacoes(){
         <i class="fa-solid ${cat.icone}" style="color:#d4af37;width:22px;"></i>
         <div>
           <div class="desc">${t.categoria}</div>
+          ${htmlObs}
           <div class="data">${formatarData(t.data)} · ${t.forma || 'Não Informado'}</div>
         </div>
       </div>
@@ -842,9 +853,11 @@ function formatarData(iso){
   return `${dia}/${mes}/${ano}`;
 }
 function excluirTransacao(id){
-  dados.transacoes = dados.transacoes.filter(t=>t.id !== id);
-  salvarDados();
-  atualizarTudo();
+  if(confirm("Deseja realmente excluir este lançamento?")){
+    dados.transacoes = dados.transacoes.filter(t=>t.id !== id);
+    salvarDados();
+    atualizarTudo();
+  }
 }
 
 // ---------- RENDER: PATRIMÔNIO (INVESTIMENTOS) ----------
@@ -871,6 +884,7 @@ function renderizarPatrimonio(){
   }
 
   investimentos.forEach(t => {
+    const htmlObs = t.descricao ? `<div class="obs"><i class="fa-regular fa-note-sticky"></i> ${t.descricao}</div>` : '';
     const div = document.createElement("div");
     div.className = "transacao";
     div.style.borderLeft = "4px solid #E91E63";
@@ -879,6 +893,7 @@ function renderizarPatrimonio(){
         <i class="fa-solid fa-circle-dollar-to-slot" style="color:#E91E63; width:22px;"></i>
         <div>
           <div class="desc">Aporte de Investimento</div>
+          ${htmlObs}
           <div class="data">${formatarData(t.data)} · ${t.forma}</div>
         </div>
       </div>
@@ -911,9 +926,9 @@ function renderizarGraficos(){
   let totalInvestidoHistorico = 0;
 
   dados.transacoes.forEach(t => {
-    const dataT = new Date(t.data + 'T00:00:00');
-    if(dataT.getFullYear() === anoFiltro) {
-      const mesIdx = dataT.getMonth();
+    const [ano, mes, dia] = t.data.split('-').map(Number);
+    if(ano === anoFiltro) {
+      const mesIdx = mes - 1;
       if(t.tipo === "receita") {
         receitasMensais[mesIdx] += t.valor;
       } else {
@@ -921,9 +936,9 @@ function renderizarGraficos(){
       }
     }
     if(t.categoria === "Investimentos") {
-      const mesIdx = dataT.getMonth();
+      const mesIdx = mes - 1;
       totalInvestidoHistorico += t.valor;
-      if(dataT.getFullYear() === anoFiltro) {
+      if(ano === anoFiltro) {
         patrimonioAcumulado[mesIdx] = totalInvestidoHistorico;
       }
     }
